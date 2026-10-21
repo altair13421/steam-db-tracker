@@ -26,6 +26,24 @@
   </div>
 </div>
 
+<div class="card mb-4">
+  <div class="card-header">
+    <strong><i class="bi bi-steam me-2"></i>Steam Store</strong>
+  </div>
+  <div class="card-body">
+    <iframe
+      class="steam-store-widget"
+      src="https://store.steampowered.com/widget/{{ app.appid }}/"
+      title="Steam Store widget for {{ app.cached_name|default:app.alias }}"
+      loading="lazy"
+      scrolling="no">
+      <a href="https://store.steampowered.com/app/{{ app.appid }}/" target="_blank" rel="noopener noreferrer">
+        View this game on the Steam Store
+      </a>
+    </iframe>
+  </div>
+</div>
+
 <div class="card shadow-sm border-0 mb-4">
   <div class="card-header d-flex align-items-center">
     <strong><i class="bi bi-newspaper me-2"></i>Latest news</strong>
@@ -110,8 +128,8 @@
                 <tr>
                   <td class="small">{{ s.fetched_at|date:"Y-m-d H:i" }}</td>
                   <td class="small">{{ s.currency|default:"—" }}</td>
-                  <td class="small">{{ s.price_initial|default:"—" }}</td>
-                  <td class="small">{{ s.price_final|default:"—" }}</td>
+                  <td class="small">{{ s.price_initial_display|default:"—" }}</td>
+                  <td class="small">{{ s.price_final_display|default:"—" }}</td>
                   <td class="small">{{ s.discount_percent|default:"0" }}%</td>
                   <td class="small text-muted">{{ s.last_update|default:"0" }}</td>
                 </tr>

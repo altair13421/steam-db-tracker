@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="500" viewBox="0 0 1200 500" fill="none">
+  <defs>
+    <linearGradient id="fade" x1="600" y1="0" x2="600" y2="500" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#101216" stop-opacity="0"/>
+      <stop offset=".48" stop-color="#101216" stop-opacity=".28"/>
+      <stop offset="1" stop-color="#101216" stop-opacity=".94"/>
+    </linearGradient>
+    <linearGradient id="haze" x1="178" y1="192" x2="1110" y2="491" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#42D9C5" stop-opacity=".2"/>
+      <stop offset=".56" stop-color="#ED5C88" stop-opacity=".11"/>
+      <stop offset="1" stop-color="#F5D547" stop-opacity=".15"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#haze)" d="M0 345h1200v155H0z"/>
+  <g fill="#171B22" stroke="#46515D" stroke-opacity=".52">
+    <path d="M8 315h70v-90h16v-22h9v22h17v90h23v185H8z"/>
+    <path d="M122 278h47v-65h12v-35h8v35h15v65h22v222H122z"/>
+    <path d="M198 324h94v-118h20v-35h8v35h17v118h23v176H198z"/>
+    <path d="M334 266h66v-82h13v-34h8v34h16v82h24v234H334z"/>
+    <path d="M430 312h64v-123h14v-29h9v29h17v123h24v188H430z"/>
+    <path d="M536 242h56v-71h13v-50h9v50h18v71h24v258H536z"/>
+    <path d="M644 292h76v-113h18v-43h9v43h16v113h22v208H644z"/>
+    <path d="M776 244h59v-89h13v-56h9v56h18v89h22v256H776z"/>
+    <path d="M900 302h57v-115h15v-36h9v36h18v115h24v198H900z"/>
+    <path d="M1021 263h70v-72h13v-39h9v39h18v72h23v237h-133z"/>
+    <path d="M1114 328h55v-98h14v-27h8v27h13v98h18v172h-108z"/>
+  </g>
+  <g fill="#55C9EE" fill-opacity=".48">
+    <path d="M31 250h8v13h-8zm24 0h8v13h-8zm85 42h7v12h-7zm23-75h7v12h-7zm68 69h8v13h-8zm45 54h8v13h-8zm73-45h8v13h-8zm26-67h8v13h-8zm55 87h8v13h-8zm61-78h8v13h-8zm40 50h8v13h-8zm67-84h8v13h-8zm20 47h8v13h-8zm84 76h8v13h-8zm25-65h8v13h-8zm62-60h8v13h-8zm26 50h8v13h-8zm71 75h8v13h-8zm41-57h8v13h-8zm47-55h8v13h-8zm29 66h8v13h-8z"/>
+  </g>
+  <g fill="#F5D547" fill-opacity=".5">
+    <path d="M45 282h8v13h-8zm106-38h7v12h-7zm69 85h8v13h-8zm80-37h8v13h-8zm63 64h8v13h-8zm55-91h8v13h-8zm82 55h8v13h-8zm89-78h8v13h-8zm49 58h8v13h-8zm91-91h8v13h-8zm26 70h8v13h-8zm85 48h8v13h-8zm58-75h8v13h-8zm82 83h8v13h-8zm75-53h8v13h-8z"/>
+  </g>
+  <path stroke="#55C9EE" stroke-opacity=".24" d="M0 421h1200M0 447h1200M0 474h1200"/>
+  <path fill="url(#fade)" d="M0 0h1200v500H0z"/>
+</svg>

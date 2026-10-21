@@ -180,6 +180,10 @@ class AppDetailViewTests(TestCase):
         self.assertLess(html.index("Latest news"), html.index("Price history"))
         self.assertContains(response, reverse("tracker:news_detail", kwargs={"gid": post.gid}))
         self.assertContains(response, "Read announcement")
+        self.assertContains(
+            response,
+            'src="https://store.steampowered.com/widget/292030/"',
+        )
         self.assertContains(response, "/charts/price_292030.png?v=")
         self.assertContains(response, "/charts/discount_292030.png?v=")
 
@@ -206,3 +210,28 @@ class AppDetailViewTests(TestCase):
                 self.assertIsNotNone(discount_chart)
                 self.assertTrue(price_chart.is_file())
                 self.assertTrue(discount_chart.is_file())
+
+
+class PriceDisplayTests(TestCase):
+    def test_digest_displays_cents_as_major_currency_units(self):
+        app = TrackedApp.objects.create(
+            appid=292032,
+            alias="Test app",
+            cached_currency="USD",
+        )
+        AppSnapshot.objects.create(
+            app=app,
+            currency="USD",
+            price_final=1799,
+        )
+
+        response = self.client.get(reverse("tracker:digest"), {"days": 7})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "17.99 USD")
+        self.assertNotContains(response, "1799.00 USD")
+
+    def test_price_chart_formats_cents_as_major_currency_units(self):
+        from tracker.services.charts import _fmt_price_axis
+
+        self.assertEqual(_fmt_price_axis(1799), "17.99")

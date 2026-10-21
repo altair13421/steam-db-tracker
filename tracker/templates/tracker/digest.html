@@ -71,7 +71,7 @@
             <td class="text-center"><span class="badge bg-secondary">{{ ad.n_news }}</span></td>
             <td>
               {% if ad.lowest_price %}
-                {{ ad.lowest_price|floatformat:2 }} {{ ad.app.cached_currency }}
+                {{ ad.lowest_price_display }}
               {% else %}
                 <span class="text-muted">—</span>
               {% endif %}

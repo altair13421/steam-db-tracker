@@ -81,6 +81,20 @@ class AppSnapshot(models.Model):
     discount_percent = models.PositiveSmallIntegerField(default=0)
     last_update = models.PositiveIntegerField(default=0)
 
+    @property
+    def price_final_display(self):
+        if self.price_final is None:
+            return None
+        currency = self.currency or ""
+        return f"{self.price_final / 100:.2f} {currency}".strip()
+
+    @property
+    def price_initial_display(self):
+        if self.price_initial is None:
+            return None
+        currency = self.currency or ""
+        return f"{self.price_initial / 100:.2f} {currency}".strip()
+
     class Meta:
         ordering = ["-fetched_at"]
         indexes = [

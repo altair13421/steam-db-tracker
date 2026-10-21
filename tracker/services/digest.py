@@ -30,6 +30,13 @@ class AppDigest:
     last_update_url: str = ""
 
     @property
+    def lowest_price_display(self) -> Optional[str]:
+        if self.lowest_price is None:
+            return None
+        currency = self.app.cached_currency or ""
+        return f"{self.lowest_price / 100:.2f} {currency}".strip()
+
+    @property
     def total_changes(self) -> int:
         return (self.n_price_drops + self.n_price_hikes +
                 self.n_new_discounts + self.n_discount_ends +
