@@ -5,7 +5,7 @@ discounts, patch notes / app updates, news/announcements** — using only
 **public Steam storefront APIs (no API key)**. Ships with a Dockerfile +
 docker-compose so it **auto-restarts on crash or reboot**.
 
-- 🐍 Pure Python / Django 4.2+ (LTS) project, no Node / no npm.
+- 🐍 Python 3.14+ / Django project; no Node / no npm.
 - 🌐 Web UI (Bootstrap 5) for: dashboard, app detail with chart, changelog
   with filters, news feed, weekly digest.
 - 🔐 Django admin at `/admin/` for power-user management.
@@ -18,7 +18,14 @@ docker-compose so it **auto-restarts on crash or reboot**.
 
 ---
 
-## 1. Quick start — Docker (recommended)
+## Installation
+
+You can run the app with Docker Compose (recommended) or directly with Python.
+Local Python installs require Python 3.14 or newer, as declared in
+`pyproject.toml`. Docker and Docker Compose are required for the containerized
+setup.
+
+### Docker Compose (recommended)
 
 ```bash
 # 1. Configure env (optional — defaults are sane).
@@ -31,14 +38,14 @@ cp .env.example .env
 # 2. Build + start both services.
 docker compose up -d --build
 
-# 3. Wait for the scheduler to seed + migrate, then open the UI:
-open http://localhost:9000/
+# 3. Open the UI:
+# http://localhost:9000/
 ```
 
 The compose file:
 1. Builds the image once (cached on subsequent runs).
 2. Starts `scheduler` (runs `migrate`, `seed_apps`, then `manage.py schedule`).
-3. Starts `web` (gunicorn on :8000) once `scheduler` is healthy.
+3. Starts `web` (gunicorn on port 9000) after starting `scheduler`.
 4. Both services share `./data`, `./media`, `./logs`, `./config` host volumes.
 
 Logs:
@@ -56,34 +63,37 @@ docker compose restart scheduler       # just kick the scheduler
 
 ---
 
-## 2. Quick start — local Python
+### Local Python
 
 ```bash
-# 1. Create + activate a venv.
-python -m venv .venv && source .venv/bin/activate
+# 1. Create + activate a venv (Python 3.14+).
+python3.14 -m venv .venv && source .venv/bin/activate
 
-# 2. Install deps.
+# 2. Install dependencies.
 pip install -r requirements.txt
 
-# 3. Migrate + seed the watchlist.
+# 3. Migrate the database and seed the watchlist.
 python manage.py migrate
 python manage.py seed_apps
 
-# 4. Run one tracking cycle so the dashboard has data.
+# 4. Fetch initial app data (requires internet access to Steam).
 python manage.py track
 
-# 5. Start the dev server in one terminal…
+# 5. Start the web server in one terminal:
 python manage.py runserver
 
-# 6. …and the scheduler in another.
+# 6. In another terminal, start periodic tracking:
 python manage.py schedule
 ```
 
-Visit <http://localhost:8000/>.
+Visit <http://localhost:8000/>. For local development, set
+`DJANGO_DEBUG=True` in your shell before starting the server. Environment
+variables are read directly; copying `.env.example` to `.env` is for Docker
+Compose, which loads that file automatically.
 
 ---
 
-## 3. Management commands
+## Usage
 
 All commands work the same in Docker:
 
@@ -106,7 +116,7 @@ docker compose run --rm web python manage.py <cmd>
 | `python manage.py digest` | Build + print a weekly Markdown digest. |
 | `python manage.py digest --days 30 --write` | Save a 30-day digest to `media/digest_<date>.md`. |
 | `python manage.py createsuperuser` | Create an admin login for `/admin/`. |
-| `python manage.py collectstatic` | Bundle static files (only needed for production nginx). |
+| `python manage.py collectstatic` | Collect static files for deployment. |
 
 ---
 
@@ -232,9 +242,11 @@ All settings live in `.env` (or environment variables on Docker):
 
 ## 8. Production notes
 
-- **Static files**: in production run `python manage.py collectstatic` once
-  and serve `staticfiles/` via nginx (or your reverse proxy).
-- **HTTPS**: put Caddy / Traefik / nginx in front of gunicorn on :8000.
+- **Static files**: the Docker image runs `collectstatic` during its build and
+  serves static files with WhiteNoise. For other deployments, run
+  `python manage.py collectstatic`.
+- **HTTPS**: put Caddy / Traefik / nginx in front of gunicorn on port 9000
+  (Docker) or port 8000 (local development).
 - **Postgres**: switch `DATABASE_URL=postgres://...` and you're done — the
   ORM code is identical.
 - **Scale**: the scheduler is single-process by design (Steam throttles
@@ -260,6 +272,17 @@ templates, charts, digest) doesn't care where the data came from.
 
 ---
 
-## 10. License
+## GitHub Actions
+
+The `Check and ZIP` workflow runs Django's system checks and test suite on
+pushes, pull requests, and manual dispatches. When both checks pass, it creates
+a ZIP of the tracked source files and uploads it as the `steam-tracker-django`
+workflow artifact. Download the ZIP from the successful run's **Actions**
+page. Runtime data, local databases, virtual environments, and `.env` files
+are not included.
+
+---
+
+## License
 
 MIT — do what you want with this; not affiliated with Valve / Steam.
