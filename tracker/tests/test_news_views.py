@@ -56,3 +56,87 @@ class NewsDetailViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "&lt;script&gt;")
         self.assertNotContains(response, "<script>")
+
+    def test_news_detail_converts_steam_markup_and_resolves_clan_images(self):
+        app = TrackedApp.objects.create(appid=730, alias="CS2")
+        post = NewsPost.objects.create(
+            gid="123458",
+            app=app,
+            contents=(
+                "[p]Hello, choom![/p]"
+                '[p][img src="{STEAM_CLAN_IMAGE}/35210272/image.png"][/img][/p]'
+                '[p][dynamiclink href="https://example.com/watch"]Watch here[/dynamiclink][/p]'
+                '[p][dynamiclink href="https://example.com/empty"][/dynamiclink][/p]'
+                "[p][img]https://example.com/plain.png[/img][/p]"
+                "[list][*]One[*]Two[/list]"
+            ),
+        )
+
+        response = self.client.get(
+            reverse("tracker:news_detail", kwargs={"gid": post.gid})
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "<p>Hello, choom!</p>", html=True)
+        self.assertContains(
+            response,
+            'src="https://clan.akamai.steamstatic.com/images/35210272/image.png"',
+        )
+        self.assertContains(
+            response,
+            '<a href="https://example.com/watch" target="_blank" rel="noopener noreferrer">Watch here</a>',
+            html=True,
+        )
+        self.assertContains(response, "https://example.com/empty")
+        self.assertContains(response, '<img src="https://example.com/plain.png"', html=False)
+        self.assertContains(response, "<ul><li>One</li><li>Two</li></ul>", html=True)
+        self.assertNotContains(response, "[p]")
+
+    def test_news_detail_rejects_unsafe_markup_urls(self):
+        app = TrackedApp.objects.create(appid=730, alias="CS2")
+        post = NewsPost.objects.create(
+            gid="123459",
+            app=app,
+            contents=(
+                '[dynamiclink href="javascript:alert(1)"]bad link[/dynamiclink]'
+                '[img src="javascript:alert(1)"][/img]'
+            ),
+        )
+
+        response = self.client.get(
+            reverse("tracker:news_detail", kwargs={"gid": post.gid})
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "javascript:")
+        self.assertNotContains(response, "<img")
+
+    def test_news_detail_converts_reported_steam_markup(self):
+        app = TrackedApp.objects.create(appid=1091500, alias="Cyberpunk 2077")
+        post = NewsPost.objects.create(
+            gid="123460",
+            app=app,
+            contents=(
+                "[p]Chrome up, chooms! A new update is coming.[/p]"
+                "[p][/p]"
+                '[p][img src="{STEAM_CLAN_IMAGE}/35210272/image.png"][/img][/p]'
+                "[p]Tune in here:[/p]"
+                '[p][dynamiclink href="https://twitch.tv/cdprojektred"][/dynamiclink][/p]'
+            ),
+        )
+
+        response = self.client.get(
+            reverse("tracker:news_detail", kwargs={"gid": post.gid})
+        )
+        rendered = response.content.decode()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("<p>Chrome up, chooms! A new update is coming.</p>", rendered)
+        self.assertIn(
+            'src="https://clan.akamai.steamstatic.com/images/35210272/image.png"',
+            rendered,
+        )
+        self.assertIn(">https://twitch.tv/cdprojektred</a>", rendered)
+        self.assertNotIn("[p]", rendered)
+        self.assertNotIn("[img", rendered)
+        self.assertNotIn("[dynamiclink", rendered)

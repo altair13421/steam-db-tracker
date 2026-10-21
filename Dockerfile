@@ -41,6 +41,9 @@ RUN useradd -m -u 10001 tracker \
 
 USER tracker
 
+# Collect static assets into STATIC_ROOT for WhiteNoise in production.
+RUN python manage.py collectstatic --noinput
+
 # Default entrypoint = gunicorn serving the Django app on :9000.
 # Override per-service via `command:` in docker-compose.
 ENTRYPOINT ["/usr/bin/tini", "--"]

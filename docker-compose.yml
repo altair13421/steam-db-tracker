@@ -28,6 +28,7 @@ services:
         required: false
     environment:
       HOME: /tmp
+      GUNICORN_CMD_ARGS: "--timeout ${GUNICORN_TIMEOUT:-300}"
       # Force DJANGO_DEBUG=False in the web service even if .env forgot.
       DJANGO_DEBUG: "False"
     volumes:

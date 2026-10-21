@@ -1,38 +1,55 @@
 {% extends "tracker/base.html" %}
+{% load steam_news %}
 {% load tz %}
 {% block title %}{{ post.title|default:"News post" }} — Steam Tracker{% endblock %}
 
 {% block content %}
-<article class="card">
-  <div class="card-body">
-    <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
-      <div>
-        <h1 class="h3 mb-2">{{ post.title|default:"Untitled news post" }}</h1>
-        <div class="text-muted small">
-          <a href="{% url 'tracker:app_detail' post.app.appid %}">{{ post.app }}</a>
-          {% if post.date %}
-            · Published
-            {% timezone "UTC" %}
-              <time datetime="{{ post.date|date:'c' }}">{{ post.date|date:"Y-m-d H:i" }} UTC</time>
-            {% endtimezone %}
+<div class="row justify-content-center">
+  <div class="col-xl-9">
+    <article class="card shadow-sm border-0 news-article">
+      <div class="card-header bg-body-secondary border-0 d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+          <span class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle">News</span>
+          {% if post.is_update %}
+            <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle ms-2">Update</span>
           {% endif %}
-          {% if post.author %} · {{ post.author }}{% endif %}
-          {% if post.feed %} · {{ post.feed }}{% endif %}
+        </div>
+        <a href="{% url 'tracker:app_detail' post.app.appid %}" class="btn btn-link btn-sm px-0 text-decoration-none">
+          <i class="bi bi-arrow-left"></i> Back to app
+        </a>
+      </div>
+      <div class="card-body p-4 p-md-5">
+        <div class="mb-4">
+          <h1 class="h2 mb-3">{{ post.title|default:"Untitled news post" }}</h1>
+          <div class="text-muted small d-flex flex-wrap gap-2 align-items-center">
+            <a href="{% url 'tracker:app_detail' post.app.appid %}" class="text-decoration-none fw-semibold">{{ post.app }}</a>
+            {% if post.date %}
+              <span>·</span>
+              {% timezone "UTC" %}
+                <time datetime="{{ post.date|date:'c' }}">{{ post.date|date:"Y-m-d H:i" }} UTC</time>
+              {% endtimezone %}
+            {% endif %}
+            {% if post.author %}<span>·</span><span>{{ post.author }}</span>{% endif %}
+            {% if post.feed %}<span>·</span><span>{{ post.feed }}</span>{% endif %}
+          </div>
+        </div>
+
+        <div class="news-content">{{ post.contents|steam_news }}</div>
+
+        <div class="d-flex flex-wrap gap-2 mt-4 pt-3 border-top">
+          <a href="{% url 'tracker:news' %}?appid={{ post.app.appid }}"
+             class="btn btn-outline-secondary">
+            <i class="bi bi-list-ul"></i> View app news
+          </a>
+          {% if post.url %}
+            <a href="{{ post.url }}" target="_blank" rel="noopener noreferrer"
+               class="btn btn-primary">
+              <i class="bi bi-box-arrow-up-right"></i> Read more on the site
+            </a>
+          {% endif %}
         </div>
       </div>
-      {% if post.is_update %}<span class="badge bg-info">Update</span>{% endif %}
-    </div>
-
-    <div class="news-content">{{ post.contents|linebreaks }}</div>
-
-    <div class="d-flex gap-2 mt-4">
-      {% if post.url %}
-        <a href="{{ post.url }}" target="_blank" rel="noopener noreferrer"
-           class="btn btn-primary">Open on Steam</a>
-      {% endif %}
-      <a href="{% url 'tracker:news' %}?appid={{ post.app.appid }}"
-         class="btn btn-outline-secondary">Back to app news</a>
-    </div>
+    </article>
   </div>
-</article>
+</div>
 {% endblock %}

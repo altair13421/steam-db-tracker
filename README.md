@@ -26,6 +26,7 @@ cp .env.example .env
 # Edit .env to set DJANGO_SECRET_KEY for production.
 # Set DOCKER_UID and DOCKER_GID in .env to the output of `id -u` and `id -g`
 # so the containers can write to the bind-mounted data/, media/, and logs/.
+# GUNICORN_TIMEOUT controls the web worker timeout in seconds (default 300).
 
 # 2. Build + start both services.
 docker compose up -d --build
@@ -120,6 +121,7 @@ docker compose run --rm web python manage.py <cmd>
 | `/app/<appid>` | App detail — price chart + recent snapshots + recent changes + latest news. |
 | `/changelog` | Filterable changelog (by app, change type, days). |
 | `/news` | News feed across all apps, filterable by app + "only updates". |
+| `/news/<gid>` | News detail — Steam announcement content with formatted text, images, links, and media. |
 | `/digest` | Weekly (or N-day) digest with per-app stats. |
 | `/charts/<filename>` | Serves the PNGs (in production prefer nginx). |
 | `/admin/` | Django admin (login required). |

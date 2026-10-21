@@ -121,15 +121,24 @@
           <ul class="list-group list-group-flush">
             {% for n in news %}
               <li class="list-group-item py-2">
-                <div class="d-flex justify-content-between">
-                  <a href="{% url 'tracker:news_detail' n.gid %}" class="small text-decoration-none">
-                    {{ n.title|truncatechars:55 }}
-                  </a>
-                  <span class="text-muted small">{{ n.date|date:"Y-m-d" }}</span>
+                <div class="d-flex justify-content-between align-items-start gap-2">
+                  <div class="flex-grow-1">
+                    <a href="{% url 'tracker:news_detail' n.gid %}" class="small text-decoration-none fw-semibold d-block">
+                      {{ n.title|truncatechars:55 }}
+                    </a>
+                    {% if n.is_update %}
+                      <span class="badge bg-info mt-1">Update</span>
+                    {% endif %}
+                  </div>
+                  <div class="text-muted small text-nowrap">{{ n.date|date:"Y-m-d" }}</div>
                 </div>
-                {% if n.is_update %}
-                  <span class="badge bg-info mt-1">Update</span>
-                {% endif %}
+                <div class="mt-2">
+                  <a href="{% url 'tracker:news_detail' n.gid %}" class="btn btn-link btn-sm p-0 text-decoration-none">Read more</a>
+                  {% if n.url %}
+                    <a href="{{ n.url }}" target="_blank" rel="noopener noreferrer"
+                       class="btn btn-link btn-sm p-0 ms-2 text-decoration-none">Read more on the site</a>
+                  {% endif %}
+                </div>
               </li>
             {% endfor %}
           </ul>
