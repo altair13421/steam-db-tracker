@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+
+# Virtualenv
+.venv/
+venv/
+env/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local data + secrets (kept out of git + Docker context)
+.env
+data/
+logs/
+media/
+staticfiles/
+*.sqlite3
+*.sqlite3-shm
+*.sqlite3-wal
+
+# Django migrations cache (keep the migration files themselves though)
+# (Don't ignore tracker/migrations/ — those ARE the migration files.)

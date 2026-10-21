@@ -1,0 +1,26 @@
+[project]
+name = "steam-tracker-django"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Faez Akhtar", email = "faezakhtar110@outlook.com" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "dj-database-url>=2.1.0",
+    "django>=4.2,<5.3",
+    "gunicorn>=21.2.0",
+    "matplotlib>=3.8.0",
+    "python-dateutil>=2.8.2",
+    "pyyaml>=6.0.1",
+    "requests>=2.31.0",
+    "whitenoise>=6.6.0",
+]
+
+[project.scripts]
+steam-tracker-django = "steam_tracker_django:main"
+
+[build-system]
+requires = ["uv_build>=0.13.1,<0.14.0"]
+build-backend = "uv_build"

@@ -1,0 +1,70 @@
+{% extends "tracker/base.html" %}
+{% block title %}News — Steam Tracker{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3 mb-0">News &amp; Announcements</h1>
+  <div>
+    {% if only_updates %}
+      <a class="btn btn-outline-secondary btn-sm" href="{% url 'tracker:news' %}{% if active_appid %}?appid={{ active_appid }}{% endif %}">
+        <i class="bi bi-list"></i> Show all
+      </a>
+    {% else %}
+      <a class="btn btn-outline-primary btn-sm" href="{% url 'tracker:news' %}?{% if active_appid %}appid={{ active_appid }}&{% endif %}only_updates=1">
+        <i class="bi bi-patch"></i> Only updates
+      </a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="mb-3">
+  {% if apps %}
+    <a href="{% url 'tracker:news' %}" class="btn btn-sm {% if not active_appid %}btn-primary{% else %}btn-outline-secondary{% endif %}">All apps</a>
+    {% for a in apps %}
+      <a href="{% url 'tracker:news' %}?appid={{ a.appid }}{% if only_updates %}&only_updates=1{% endif %}"
+         class="btn btn-sm {% if active_appid|stringformat:"s" == a.appid|stringformat:"s" %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+        {{ a.cached_name|default:a.alias }}
+      </a>
+    {% endfor %}
+  {% endif %}
+</div>
+
+<div class="card">
+  <div class="card-body p-0">
+    {% if news %}
+      <ul class="list-group list-group-flush">
+        {% for n in news %}
+          <li class="list-group-item py-3">
+            <div class="d-flex justify-content-between align-items-start">
+              <div class="me-3">
+                <a href="{% url 'tracker:news_detail' n.gid %}" class="text-decoration-none">
+                  <strong>{{ n.title }}</strong>
+                </a>
+                <div class="text-muted small mt-1">
+                  <a href="{% url 'tracker:app_detail' n.app.appid %}">{{ n.app }}</a>
+                  · {{ n.date|date:"Y-m-d H:i" }} UTC
+                  · {{ n.feed|default:"steam_community_announcements" }}
+                </div>
+              </div>
+              <div>
+                {% if n.is_update %}
+                  <span class="badge bg-info">Update</span>
+                {% endif %}
+                {% if n.url %}
+                  <a href="{{ n.url }}" target="_blank" rel="noopener noreferrer"
+                     class="btn btn-outline-secondary btn-sm ms-2">Steam</a>
+                {% endif %}
+              </div>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="p-5 text-center text-muted">
+        <i class="bi bi-newspaper" style="font-size: 2rem;"></i>
+        <p class="mt-3 mb-0">No news yet — run "Track now" to fetch.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

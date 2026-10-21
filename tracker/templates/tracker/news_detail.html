@@ -1,0 +1,38 @@
+{% extends "tracker/base.html" %}
+{% load tz %}
+{% block title %}{{ post.title|default:"News post" }} — Steam Tracker{% endblock %}
+
+{% block content %}
+<article class="card">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+      <div>
+        <h1 class="h3 mb-2">{{ post.title|default:"Untitled news post" }}</h1>
+        <div class="text-muted small">
+          <a href="{% url 'tracker:app_detail' post.app.appid %}">{{ post.app }}</a>
+          {% if post.date %}
+            · Published
+            {% timezone "UTC" %}
+              <time datetime="{{ post.date|date:'c' }}">{{ post.date|date:"Y-m-d H:i" }} UTC</time>
+            {% endtimezone %}
+          {% endif %}
+          {% if post.author %} · {{ post.author }}{% endif %}
+          {% if post.feed %} · {{ post.feed }}{% endif %}
+        </div>
+      </div>
+      {% if post.is_update %}<span class="badge bg-info">Update</span>{% endif %}
+    </div>
+
+    <div class="news-content">{{ post.contents|linebreaks }}</div>
+
+    <div class="d-flex gap-2 mt-4">
+      {% if post.url %}
+        <a href="{{ post.url }}" target="_blank" rel="noopener noreferrer"
+           class="btn btn-primary">Open on Steam</a>
+      {% endif %}
+      <a href="{% url 'tracker:news' %}?appid={{ post.app.appid }}"
+         class="btn btn-outline-secondary">Back to app news</a>
+    </div>
+  </div>
+</article>
+{% endblock %}

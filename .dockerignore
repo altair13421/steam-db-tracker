@@ -1,0 +1,23 @@
+# Build artifacts that shouldn't enter the Docker image.
+.git/
+.gitignore
+.gitattributes
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.sqlite3
+*.sqlite3-*
+data/
+logs/
+media/
+staticfiles/
+.env
+*.md
+docker-compose*.yml

@@ -1,0 +1,16 @@
+# Seed watchlist — same schema as the CLI bot's apps.yaml.
+# Run `python manage.py seed_apps` (or let docker-compose do it on startup)
+# to populate the TrackedApp table from this file.
+
+apps:
+  - appid: 730
+    alias: "CS2"
+    news: true
+    updates: true
+    price: true
+
+  - appid: 1091500
+    alias: "Cyberpunk 2077"
+    news: true
+    updates: true
+    price: true

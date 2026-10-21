@@ -1,0 +1,9 @@
+# Steam Tracker (Django) — Python dependencies
+Django>=4.2,<5.3            # LTS, 4.2 + 5.x both supported
+gunicorn>=21.2.0           # Production WSGI server
+whitenoise>=6.6.0           # Static file serving in production
+requests>=2.31.0            # Steam storefront API client
+PyYAML>=6.0.1              # Optional config import from CLI bot
+matplotlib>=3.8.0          # Price-history charts
+python-dateutil>=2.8.2     # Robust date parsing
+dj-database-url>=2.1.0     # DATABASE_URL parsing (Postgres-ready)

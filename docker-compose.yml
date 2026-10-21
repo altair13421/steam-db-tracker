@@ -1,0 +1,73 @@
+# ============================================================
+# Steam Tracker (Django) — docker-compose
+#
+# Two services share the same image:
+#   web       — Django + gunicorn (serves the UI on :9000)
+#   scheduler — Long-running `manage.py schedule` loop
+#
+# Both mount the same data/, media/, logs/ host volumes, so:
+#   - Both services share the same SQLite DB.
+#   - Chart PNGs written by the scheduler are visible to the web
+#     service immediately.
+#   - Rebuilds / restarts never lose history.
+#
+# Autostart on boot: `restart: unless-stopped` => Docker brings
+# both services back up automatically after a host reboot.
+# ============================================================
+services:
+  web:
+    build: .
+    image: steam-tracker-django:latest
+    container_name: steam-tracker-web
+    restart: unless-stopped
+    user: "${DOCKER_UID:-1000}:${DOCKER_GID:-1000}"
+    ports:
+      - "9000:9000"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      HOME: /tmp
+      # Force DJANGO_DEBUG=False in the web service even if .env forgot.
+      DJANGO_DEBUG: "False"
+    volumes:
+      - ./data:/app/data
+      - ./media:/app/media
+      - ./logs:/app/logs
+      - ./config:/app/config
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:9000/"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    depends_on:
+      - scheduler
+
+  scheduler:
+    build: .
+    image: steam-tracker-django:latest
+    container_name: steam-tracker-scheduler
+    restart: unless-stopped
+    user: "${DOCKER_UID:-1000}:${DOCKER_GID:-1000}"
+    healthcheck:
+      disable: true
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      HOME: /tmp
+    volumes:
+      - ./data:/app/data
+      - ./media:/app/media
+      - ./logs:/app/logs
+      - ./config:/app/config
+    # Override the Dockerfile CMD to run the Django scheduler loop.
+    # Migrate on every startup so schema changes are auto-applied,
+    # then seed + chart before entering the long-running loop.
+    command: >
+      sh -c "
+        python manage.py migrate --noinput &&
+        python manage.py seed_apps &&
+        python manage.py schedule
+      "

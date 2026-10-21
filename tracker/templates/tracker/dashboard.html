@@ -1,0 +1,178 @@
+{% extends "tracker/base.html" %}
+{% block title %}Dashboard — Steam Tracker{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="h3 mb-1">Tracked Apps</h1>
+    <div class="text-muted small">{{ stats.total_apps }} app(s) · {{ stats.changes_24h }} changes (24h) · {{ stats.updates_24h }} updates (24h) · {{ stats.news_24h }} news (24h)</div>
+  </div>
+</div>
+
+{# ---------- Add new app ---------- #}
+<div class="card mb-4">
+  <div class="card-header d-flex align-items-center">
+    <i class="bi bi-plus-circle me-2"></i>
+    <strong>Add a tracked app</strong>
+  </div>
+  <div class="card-body">
+    <form method="post">
+      {% csrf_token %}
+      <div class="row g-3">
+        <div class="col-md-3">
+          <label class="form-label">Steam App ID</label>
+          {{ add_form.appid }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Alias (optional)</label>
+          {{ add_form.alias }}
+        </div>
+        <div class="col-md-5 d-flex align-items-end">
+          <div class="form-check form-check-inline">
+            {{ add_form.track_price }}
+            <label class="form-check-label" for="{{ add_form.track_price.id_for_label }}">Price</label>
+          </div>
+          <div class="form-check form-check-inline">
+            {{ add_form.track_news }}
+            <label class="form-check-label" for="{{ add_form.track_news.id_for_label }}">News</label>
+          </div>
+          <div class="form-check form-check-inline">
+            {{ add_form.track_updates }}
+            <label class="form-check-label" for="{{ add_form.track_updates.id_for_label }}">Updates</label>
+          </div>
+          <button type="submit" name="add_app" value="1" class="btn btn-primary ms-auto">
+            <i class="bi bi-plus"></i> Add
+          </button>
+        </div>
+      </div>
+      <div class="form-text mt-2">Find an App ID from the URL of a Steam store page — e.g. <code>store.steampowered.com/app/730/...</code> → AppID 730.</div>
+    </form>
+  </div>
+</div>
+
+{# ---------- Tracked apps table ---------- #}
+<div class="card">
+  <div class="card-header d-flex align-items-center">
+    <i class="bi bi-controller me-2"></i>
+    <strong>Apps</strong>
+    <form method="post" action="{% url 'tracker:track_now' %}" class="ms-auto">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-sm btn-success">
+        <i class="bi bi-arrow-repeat"></i> Track all now
+      </button>
+    </form>
+  </div>
+  <div class="card-body p-0">
+    {% if apps %}
+      <table class="table table-hover mb-0 align-middle">
+        <thead class="table-light">
+          <tr>
+            <th scope="col">AppID</th>
+            <th scope="col">Name</th>
+            <th scope="col">Current price</th>
+            <th scope="col">MSRP</th>
+            <th scope="col">Discount</th>
+            <th scope="col">Last snapshot</th>
+            <th scope="col" class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for app in apps %}
+            <tr>
+              <td><a href="https://store.steampowered.com/app/{{ app.appid }}" target="_blank">{{ app.appid }}</a></td>
+              <td>
+                <a href="{% url 'tracker:app_detail' app.appid %}"><strong>{{ app.cached_name|default:app.alias }}</strong></a>
+                {% if app.alias and app.cached_name and app.alias != app.cached_name %}<div class="text-muted small">aka {{ app.alias }}</div>{% endif %}
+              </td>
+              <td>
+                {% if app.cached_is_free %}
+                  <span class="badge bg-success">Free</span>
+                {% else %}
+                  {{ app.display_price }}
+                {% endif %}
+              </td>
+              <td class="text-muted">{{ app.display_initial_price }}</td>
+              <td>
+                {% if app.cached_discount_percent %}
+                  <span class="badge bg-danger">-{{ app.cached_discount_percent }}%</span>
+                {% else %}
+                  <span class="text-muted">—</span>
+                {% endif %}
+              </td>
+              <td class="text-muted small">
+                {% if app.last_snapshot_at %}
+                  {{ app.last_snapshot_at|timesince }} ago
+                {% else %}
+                  <span class="badge bg-warning text-dark">never</span>
+                {% endif %}
+              </td>
+              <td class="text-end text-nowrap">
+                <form method="post" action="{% url 'tracker:track_app' app.appid %}" class="d-inline">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-sm btn-outline-primary" title="Track this app now">
+                    <i class="bi bi-arrow-repeat"></i>
+                  </button>
+                </form>
+                <a href="{% url 'tracker:app_detail' app.appid %}" class="btn btn-sm btn-outline-secondary" title="View detail">
+                  <i class="bi bi-eye"></i>
+                </a>
+                <form method="post" action="{% url 'tracker:remove_app' app.appid %}" class="d-inline"
+                      onsubmit="return confirm('Remove {{ app.cached_name|default:app.alias }} from the watchlist? (history kept)');">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-sm btn-outline-danger" title="Remove">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div class="p-5 text-center text-muted">
+        <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+        <p class="mt-3 mb-0">No apps tracked yet. Add one above or run <code>python manage.py seed_apps</code> to seed defaults.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+{# ---------- Recent changes ---------- #}
+<div class="card mt-4">
+  <div class="card-header d-flex align-items-center">
+    <i class="bi bi-clock-history me-2"></i>
+    <strong>Recent changes</strong>
+    <a href="{% url 'tracker:changelog' %}" class="btn btn-link btn-sm ms-auto">View full changelog →</a>
+  </div>
+  <div class="card-body p-0">
+    {% if recent_changes %}
+      <table class="table table-hover mb-0 align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>Time (UTC)</th>
+            <th>App</th>
+            <th>Type</th>
+            <th>Old</th>
+            <th>New</th>
+            <th>Note</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in recent_changes %}
+            <tr>
+              <td class="small">{{ c.detected_at|date:"Y-m-d H:i" }}</td>
+              <td><a href="{% url 'tracker:app_detail' c.app.appid %}">{{ c.app }}</a></td>
+              <td><span class="badge bg-secondary">{{ c.get_change_type_display }}</span></td>
+              <td class="small text-muted">{{ c.old_value|truncatechars:20 }}</td>
+              <td class="small">{{ c.new_value|truncatechars:40 }}</td>
+              <td class="small text-muted">{{ c.note|truncatechars:60 }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div class="p-4 text-muted text-center">No recent changes — run <code>track</code> first.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

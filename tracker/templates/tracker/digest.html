@@ -1,0 +1,91 @@
+{% extends "tracker/base.html" %}
+{% block title %}Weekly Digest — Steam Tracker{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3 mb-0">
+    Digest
+    <small class="text-muted">last {{ days }} days</small>
+  </h1>
+  <div class="btn-group">
+    <a href="{% url 'tracker:digest' %}?days=1" class="btn btn-outline-secondary btn-sm {% if days == 1 %}active{% endif %}">24h</a>
+    <a href="{% url 'tracker:digest' %}?days=7" class="btn btn-outline-secondary btn-sm {% if days == 7 %}active{% endif %}">7d</a>
+    <a href="{% url 'tracker:digest' %}?days=30" class="btn btn-outline-secondary btn-sm {% if days == 30 %}active{% endif %}">30d</a>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="card text-center">
+      <div class="card-body">
+        <div class="text-muted small">Total changes</div>
+        <div class="display-6">{{ report.total_changes }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card text-center">
+      <div class="card-body">
+        <div class="text-muted small">News posts</div>
+        <div class="display-6">{{ report.total_news }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card text-center">
+      <div class="card-body">
+        <div class="text-muted small">Tracked apps</div>
+        <div class="display-6">{{ report.apps|length }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if report.apps %}
+<div class="card">
+  <div class="card-header"><strong>Per-app breakdown</strong></div>
+  <div class="card-body p-0">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>App</th>
+          <th class="text-center">Price drops</th>
+          <th class="text-center">Price hikes</th>
+          <th class="text-center">New discounts</th>
+          <th class="text-center">Discounts ended</th>
+          <th class="text-center">App updates</th>
+          <th class="text-center">News</th>
+          <th>Lowest price</th>
+          <th>Max discount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ad in report.apps %}
+          <tr>
+            <td><a href="{% url 'tracker:app_detail' ad.app.appid %}">{{ ad.app }}</a></td>
+            <td class="text-center"><span class="badge bg-success">{{ ad.n_price_drops }}</span></td>
+            <td class="text-center"><span class="badge bg-danger">{{ ad.n_price_hikes }}</span></td>
+            <td class="text-center"><span class="badge bg-warning text-dark">{{ ad.n_new_discounts }}</span></td>
+            <td class="text-center"><span class="badge bg-secondary">{{ ad.n_discount_ends }}</span></td>
+            <td class="text-center"><span class="badge bg-info">{{ ad.n_app_updates }}</span></td>
+            <td class="text-center"><span class="badge bg-secondary">{{ ad.n_news }}</span></td>
+            <td>
+              {% if ad.lowest_price %}
+                {{ ad.lowest_price|floatformat:2 }} {{ ad.app.cached_currency }}
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+            <td>{% if ad.highest_discount %}{{ ad.highest_discount }}%{% else %}<span class="text-muted">—</span>{% endif %}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="alert alert-info">
+  No data in this window yet. Run <code>python manage.py track</code> a few times to start collecting snapshots.
+</div>
+{% endif %}
+{% endblock %}
