@@ -1,9 +1,13 @@
 from datetime import datetime, timezone
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
 from django.test import TestCase
+from django.test import override_settings
 from django.urls import reverse
 
-from tracker.models import NewsPost, TrackedApp
+from tracker.models import AppSnapshot, Change, NewsPost, TrackedApp
 from tracker.services.steam_api import NewsItem
 from tracker.services.tracker import record_new_news
 
@@ -140,3 +144,65 @@ class NewsDetailViewTests(TestCase):
         self.assertNotIn("[p]", rendered)
         self.assertNotIn("[img", rendered)
         self.assertNotIn("[dynamiclink", rendered)
+
+
+class AppDetailViewTests(TestCase):
+    def test_latest_news_precedes_charts_and_changes_are_readable(self):
+        app = TrackedApp.objects.create(appid=292030, alias="The Witcher 3")
+        AppSnapshot.objects.create(app=app, currency="USD", price_final=3999)
+        post = NewsPost.objects.create(
+            gid="news-292030",
+            app=app,
+            title="Latest patch notes",
+            url="https://example.com/news",
+            contents="[p]Patch details[/p]",
+            date=datetime(2026, 10, 21, tzinfo=timezone.utc),
+        )
+        Change.objects.create(
+            app=app,
+            change_type=Change.Type.APP_UPDATE,
+            new_value=post.title,
+            note=post.url,
+        )
+
+        with (
+            patch("tracker.views.render_price_chart", return_value=Path("price_292030.png")) as price_chart,
+            patch("tracker.views.render_discount_chart", return_value=Path("discount_292030.png")) as discount_chart,
+        ):
+            response = self.client.get(
+                reverse("tracker:app_detail", kwargs={"appid": app.appid})
+            )
+
+        self.assertEqual(response.status_code, 200)
+        price_chart.assert_called_once_with(app)
+        discount_chart.assert_called_once_with(app)
+        html = response.content.decode()
+        self.assertLess(html.index("Latest news"), html.index("Price history"))
+        self.assertContains(response, reverse("tracker:news_detail", kwargs={"gid": post.gid}))
+        self.assertContains(response, "Read announcement")
+        self.assertContains(response, "/charts/price_292030.png?v=")
+        self.assertContains(response, "/charts/discount_292030.png?v=")
+
+    def test_chart_service_generates_charts_from_one_snapshot(self):
+        app = TrackedApp.objects.create(appid=292031, alias="Test app")
+        AppSnapshot.objects.create(
+            app=app,
+            currency="USD",
+            price_initial=1999,
+            price_final=1499,
+            discount_percent=25,
+        )
+
+        with TemporaryDirectory() as chart_dir:
+            with override_settings(CHART_DIR=Path(chart_dir)):
+                from tracker.services.charts import (
+                    render_discount_chart,
+                    render_price_chart,
+                )
+
+                price_chart = render_price_chart(app)
+                discount_chart = render_discount_chart(app)
+                self.assertIsNotNone(price_chart)
+                self.assertIsNotNone(discount_chart)
+                self.assertTrue(price_chart.is_file())
+                self.assertTrue(discount_chart.is_file())

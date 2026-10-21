@@ -45,7 +45,7 @@ def render_price_chart(app: TrackedApp) -> Optional[Path]:
     rows: List[AppSnapshot] = list(
         app.snapshots.order_by("fetched_at")
     )
-    if len(rows) < 2:
+    if not rows:
         log.info("Skipping chart for %s — only %d snapshots", app, len(rows))
         return None
 
@@ -55,10 +55,10 @@ def render_price_chart(app: TrackedApp) -> Optional[Path]:
     currency = rows[-1].currency or ""
 
     fig, ax = plt.subplots(figsize=(10, 5), dpi=110, constrained_layout=True)
-    ax.step(x, y_initial, where="post",
+    ax.step(x, y_initial, where="post", marker="o", markersize=3,
             color="#888", linewidth=1.4, linestyle="--",
             label="Initial price (MSRP)")
-    ax.step(x, y_final, where="post",
+    ax.step(x, y_final, where="post", marker="o", markersize=3,
             color="#1f77b4", linewidth=2.0,
             label="Final price (paid)")
 
@@ -88,14 +88,15 @@ def render_price_chart(app: TrackedApp) -> Optional[Path]:
 
 def render_discount_chart(app: TrackedApp) -> Optional[Path]:
     rows = list(app.snapshots.order_by("fetched_at"))
-    if len(rows) < 2:
+    if not rows:
         return None
     x = [r.fetched_at.timestamp() for r in rows]
     y = [r.discount_percent for r in rows]
 
     fig, ax = plt.subplots(figsize=(10, 4), dpi=110, constrained_layout=True)
     ax.fill_between(x, y, step="post", color="#1f77b4", alpha=0.25)
-    ax.step(x, y, where="post", color="#1f77b4", linewidth=2.0,
+    ax.step(x, y, where="post", marker="o", markersize=3,
+            color="#1f77b4", linewidth=2.0,
             label="Discount %")
     ax.set_title(f"Discount history — {app} (AppID {app.appid})",
                  fontsize=13, fontweight="bold", loc="left")

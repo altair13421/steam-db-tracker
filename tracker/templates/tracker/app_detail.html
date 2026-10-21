@@ -26,6 +26,44 @@
   </div>
 </div>
 
+<div class="card shadow-sm border-0 mb-4">
+  <div class="card-header d-flex align-items-center">
+    <strong><i class="bi bi-newspaper me-2"></i>Latest news</strong>
+    <a href="{% url 'tracker:news' %}?appid={{ app.appid }}" class="btn btn-link btn-sm ms-auto">View all →</a>
+  </div>
+  <div class="card-body p-0">
+    {% if news %}
+      <div class="list-group list-group-flush">
+        {% for n in news %}
+          <div class="list-group-item py-3 px-3 px-md-4">
+            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2">
+              <div class="flex-grow-1">
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                  {% if n.is_update %}
+                    <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle">Update</span>
+                  {% endif %}
+                  <a href="{% url 'tracker:news_detail' n.gid %}" class="fw-semibold text-decoration-none">
+                    {{ n.title|default:"Untitled announcement" }}
+                  </a>
+                </div>
+                <div class="text-muted small">
+                  {% if n.date %}{{ n.date|date:"Y-m-d H:i" }} UTC{% else %}Publication date unavailable{% endif %}
+                  {% if n.author %} · {{ n.author }}{% endif %}
+                </div>
+              </div>
+              <a href="{% url 'tracker:news_detail' n.gid %}" class="btn btn-primary btn-sm text-nowrap">
+                Read announcement
+              </a>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="p-4 text-muted text-center">No news fetched yet.</div>
+    {% endif %}
+  </div>
+</div>
+
 <div class="row g-4">
   <div class="col-lg-8">
     {# Price chart #}
@@ -41,8 +79,11 @@
         {% else %}
           <div class="text-muted text-center p-4">
             <i class="bi bi-graph-up" style="font-size: 2rem;"></i>
-            <p class="mt-2 mb-0">Need at least 2 snapshots to render a chart.</p>
-            <p class="small mb-0">Run "Track now" twice (after the polling interval) to populate history.</p>
+            {% if snapshot_count %}
+              <p class="mt-2 mb-0">Chart could not be generated from the available snapshots.</p>
+            {% else %}
+              <p class="mt-2 mb-0">No snapshots yet — click "Track now" to start price history.</p>
+            {% endif %}
           </div>
         {% endif %}
       </div>
@@ -89,19 +130,39 @@
     <div class="card mb-4">
       <div class="card-header"><strong>Recent changes</strong></div>
       <div class="card-body p-0">
-        {% if changes %}
+        {% if change_items %}
           <ul class="list-group list-group-flush">
-            {% for c in changes %}
+            {% for item in change_items %}
+              {% with c=item.change %}
               <li class="list-group-item py-2">
-                <div class="d-flex justify-content-between">
+                <div class="d-flex justify-content-between align-items-start gap-2">
                   <span class="badge bg-secondary">{{ c.get_change_type_display }}</span>
-                  <span class="text-muted small">{{ c.detected_at|date:"Y-m-d H:i" }}</span>
+                  <time class="text-muted small text-nowrap" datetime="{{ c.detected_at|date:'c' }}">
+                    {{ c.detected_at|date:"Y-m-d H:i" }}
+                  </time>
                 </div>
                 <div class="small mt-1">
-                  {{ c.old_value|truncatechars:15 }} → {{ c.new_value|truncatechars:30 }}
+                  {% if c.old_value %}{{ c.old_value|truncatechars:24 }} → {% endif %}
+                  {% if item.news_post %}
+                    <a href="{% url 'tracker:news_detail' item.news_post.gid %}" class="text-decoration-none">
+                      {{ item.news_post.title|truncatechars:55 }}
+                    </a>
+                  {% else %}
+                    {{ c.new_value|default:"Details unavailable"|truncatechars:55 }}
+                  {% endif %}
                 </div>
-                <div class="text-muted small">{{ c.note|truncatechars:60 }}</div>
+                {% if item.news_post %}
+                  <a href="{% url 'tracker:news_detail' item.news_post.gid %}" class="btn btn-link btn-sm p-0 mt-1 text-decoration-none">
+                    Read announcement
+                  </a>
+                {% elif item.source_url %}
+                  <a href="{{ item.source_url }}" target="_blank" rel="noopener noreferrer"
+                     class="btn btn-link btn-sm p-0 mt-1 text-decoration-none">View source</a>
+                {% elif c.note %}
+                  <div class="text-muted small">{{ c.note|truncatechars:60 }}</div>
+                {% endif %}
               </li>
+              {% endwith %}
             {% endfor %}
           </ul>
         {% else %}
@@ -110,43 +171,6 @@
       </div>
     </div>
 
-    {# Latest news #}
-    <div class="card">
-      <div class="card-header d-flex align-items-center">
-        <strong>Latest news</strong>
-        <a href="{% url 'tracker:news' %}?appid={{ app.appid }}" class="btn btn-link btn-sm ms-auto">View all →</a>
-      </div>
-      <div class="card-body p-0">
-        {% if news %}
-          <ul class="list-group list-group-flush">
-            {% for n in news %}
-              <li class="list-group-item py-2">
-                <div class="d-flex justify-content-between align-items-start gap-2">
-                  <div class="flex-grow-1">
-                    <a href="{% url 'tracker:news_detail' n.gid %}" class="small text-decoration-none fw-semibold d-block">
-                      {{ n.title|truncatechars:55 }}
-                    </a>
-                    {% if n.is_update %}
-                      <span class="badge bg-info mt-1">Update</span>
-                    {% endif %}
-                  </div>
-                  <div class="text-muted small text-nowrap">{{ n.date|date:"Y-m-d" }}</div>
-                </div>
-                <div class="mt-2">
-                  <a href="{% url 'tracker:news_detail' n.gid %}" class="btn btn-link btn-sm p-0 text-decoration-none">Read more</a>
-                  {% if n.url %}
-                    <a href="{{ n.url }}" target="_blank" rel="noopener noreferrer"
-                       class="btn btn-link btn-sm p-0 ms-2 text-decoration-none">Read more on the site</a>
-                  {% endif %}
-                </div>
-              </li>
-            {% endfor %}
-          </ul>
-        {% else %}
-          <div class="p-3 text-muted text-center">No news fetched yet.</div>
-        {% endif %}
-      </div>
-    </div>
   </div>
 </div>
 {% endblock %}

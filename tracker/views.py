@@ -122,25 +122,45 @@ def remove_app(request, appid):
 def app_detail(request, appid):
     app = get_object_or_404(TrackedApp, appid=appid)
     snapshots = app.snapshots.order_by("-fetched_at")[:50]
-    news = app.news_posts.order_by("-date")[:20]
-    changes = app.changes.order_by("-detected_at")[:20]
+    news = list(app.news_posts.order_by("-date")[:8])
+    changes = list(app.changes.order_by("-detected_at")[:10])
+    news_by_title = {post.title: post for post in news}
+    change_items = []
+    for change in changes:
+        news_post = news_by_title.get(change.new_value)
+        source_url = (
+            change.note if change.note.startswith(("http://", "https://")) else ""
+        )
+        change_items.append({
+            "change": change,
+            "news_post": news_post,
+            "source_url": source_url,
+        })
 
-    # Render a chart on-demand if at least 2 snapshots exist.
+    # Regenerate charts from the latest snapshot history whenever the page loads.
     chart_url = None
     discount_chart_url = None
-    if app.snapshots.count() >= 2:
+    snapshot_count = app.snapshots.count()
+    latest_snapshot = app.snapshots.first()
+    chart_version = (
+        int(latest_snapshot.fetched_at.timestamp()) if latest_snapshot else 0
+    )
+    if snapshot_count:
         path = render_price_chart(app)
         if path:
-            chart_url = f"{settings.MEDIA_URL}charts/{path.name}"
+            chart_url = f"{reverse('tracker:chart_image', args=[path.name])}?v={chart_version}"
         dpath = render_discount_chart(app)
         if dpath:
-            discount_chart_url = f"{settings.MEDIA_URL}charts/{dpath.name}"
+            discount_chart_url = (
+                f"{reverse('tracker:chart_image', args=[dpath.name])}?v={chart_version}"
+            )
 
     return render(request, "tracker/app_detail.html", {
         "app": app,
         "snapshots": snapshots,
+        "snapshot_count": snapshot_count,
         "news": news,
-        "changes": changes,
+        "change_items": change_items,
         "chart_url": chart_url,
         "discount_chart_url": discount_chart_url,
     })
