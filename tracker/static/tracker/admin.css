@@ -1,0 +1,90 @@
+html,
+html[data-theme="light"],
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --primary: #f5d547;
+  --secondary: #202228;
+  --accent: #f5d547;
+  --primary-fg: #17170f;
+  --body-fg: #e9e7e2;
+  --body-bg: #101216;
+  --body-quiet-color: #a4a5a8;
+  --body-medium-color: #c4c4c1;
+  --body-loud-color: #fffdf7;
+  --header-color: #fffdf7;
+  --header-branding-color: #f5d547;
+  --header-bg: #16181d;
+  --header-link-color: #e9e7e2;
+  --breadcrumbs-fg: #c4c4c1;
+  --breadcrumbs-link-fg: #f5d547;
+  --breadcrumbs-bg: #202228;
+  --link-fg: #f5d547;
+  --link-hover-color: #ffe976;
+  --link-selected-fg: #f5d547;
+  --hairline-color: #34363d;
+  --border-color: #41434b;
+  --darkened-bg: #1b1d22;
+  --selected-bg: #292b31;
+  --selected-row: #343126;
+  --button-fg: #17170f;
+  --button-bg: #f5d547;
+  --button-hover-bg: #ffe976;
+  --default-button-bg: #f5d547;
+  --default-button-hover-bg: #ffe976;
+  --close-button-bg: #51535b;
+  --close-button-hover-bg: #656770;
+  --delete-button-bg: #ed5c88;
+  --delete-button-hover-bg: #f2769b;
+  --object-tools-fg: #17170f;
+  --object-tools-bg: #42d9c5;
+  --object-tools-hover-bg: #67e5d4;
+  --bs-body-bg: #101216;
+  --bs-body-color: #e9e7e2;
+  --bs-emphasis-color: #fffdf7;
+  --bs-border-color: #34363d;
+}
+
+body.steam-tracker-admin {
+  min-height: 100%;
+  color: var(--body-fg);
+  background:
+    radial-gradient(ellipse at 84% 12%, rgba(237, 92, 136, 0.1), transparent 32rem),
+    radial-gradient(ellipse at 8% 48%, rgba(85, 201, 238, 0.07), transparent 34rem),
+    url("cityscape.svg") right bottom / min(1000px, 78vw) auto no-repeat fixed,
+    var(--body-bg);
+  letter-spacing: 0.005em;
+}
+
+body.steam-tracker-admin #header {
+  border-bottom: 1px solid #393b42;
+  box-shadow: 0 3px 18px rgba(0, 0, 0, 0.18);
+}
+
+body.steam-tracker-admin #branding h1 {
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+body.steam-tracker-admin .module,
+body.steam-tracker-admin #content-related {
+  border: 1px solid rgba(139, 150, 164, 0.27);
+  border-radius: 0.45rem;
+  overflow: hidden;
+}
+
+body.steam-tracker-admin .module caption,
+body.steam-tracker-admin .module h2,
+body.steam-tracker-admin .module table caption {
+  background: #202228;
+  color: #f2f0eb;
+}
+
+body.steam-tracker-admin #nav-sidebar {
+  background: rgba(22, 24, 29, 0.96);
+}
+
+body.steam-tracker-admin input,
+body.steam-tracker-admin textarea,
+body.steam-tracker-admin select {
+  color-scheme: dark;
+}

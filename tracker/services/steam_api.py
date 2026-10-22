@@ -12,8 +12,11 @@ so the scheduler keeps tracking other apps if one fails.
 from __future__ import annotations
 
 import logging
+import json
+import re
 import time
 from dataclasses import dataclass, field
+from html.parser import HTMLParser
 from typing import Any, Dict, List, Optional
 
 import requests
@@ -24,6 +27,9 @@ log = logging.getLogger("tracker.steam_api")
 APPDETAILS_URL = "https://store.steampowered.com/api/appdetails"
 NEWS_URL = "https://api.steampowered.com/ISteamNews/GetNewsForApp/v2"
 APPLIST_URL = "https://api.steampowered.com/ISteamApps/GetAppList/v2"
+ANNOUNCEMENTS_URL = "https://steamcommunity.com/games/{appid}/announcements"
+CLAN_STEAMID_BASE = 103582791429521408
+_CAPSULE_FILENAME_RE = re.compile(r"^[a-f0-9]{40}\.(?:png|jpe?g|webp)$", re.IGNORECASE)
 
 # Steam news feed names that indicate a *real* app update.
 UPDATE_FEEDS = {
@@ -37,6 +43,75 @@ _last_request_ts: Dict[str, float] = {"last": 0.0}
 
 class ApiError(RuntimeError):
     """Raised when Steam returns an error or is unreachable."""
+
+
+class _EventCapsuleParser(HTMLParser):
+    """Extract Steam event capsule images from the community announcements page."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.covers: Dict[str, str] = {}
+
+    def handle_starttag(
+        self, tag: str, attrs: List[tuple[str, Optional[str]]],
+    ) -> None:
+        attributes = dict(attrs)
+        event_data = attributes.get("data-partnereventstore")
+        if not event_data:
+            return
+
+        try:
+            events = json.loads(event_data)
+        except json.JSONDecodeError:
+            log.warning("Steam returned invalid event metadata")
+            return
+
+        for event in events:
+            title = str(event.get("event_name") or "")
+            clan_steamid = str(event.get("clan_steamid") or "")
+            try:
+                details = json.loads(event.get("jsondata") or "{}")
+                clan_id = int(clan_steamid) - CLAN_STEAMID_BASE
+            except (TypeError, ValueError, json.JSONDecodeError):
+                log.warning("Steam returned invalid capsule metadata for %r", title)
+                continue
+
+            filenames = details.get("localized_capsule_image") or []
+            if isinstance(filenames, str):
+                filenames = [filenames]
+            filename = next(
+                (
+                    candidate for candidate in filenames
+                    if isinstance(candidate, str)
+                    and _CAPSULE_FILENAME_RE.fullmatch(candidate)
+                ),
+                "",
+            )
+            if title and clan_id > 0 and filename:
+                self.covers[title] = (
+                    "https://clan.akamai.steamstatic.com/images/"
+                    f"{clan_id}/{filename}"
+                )
+
+
+def _fetch_event_covers(appid: int) -> Dict[str, str]:
+    """Fetch capsule image URLs for recent app announcements."""
+    url = ANNOUNCEMENTS_URL.format(appid=appid)
+    try:
+        _throttle()
+        response = requests.get(
+            url,
+            headers={"User-Agent": "SteamTrackerDjango/0.1"},
+            timeout=30,
+        )
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        log.warning("Steam announcement covers unavailable for app %d: %s", appid, exc)
+        return {}
+
+    parser = _EventCapsuleParser()
+    parser.feed(response.text)
+    return parser.covers
 
 
 def _throttle() -> None:
@@ -96,6 +171,7 @@ class NewsItem:
     gid: str
     title: str = ""
     url: str = ""
+    cover_image: str = ""
     author: str = ""
     feed: str = ""
     is_update: bool = False
@@ -166,6 +242,10 @@ def fetch_app_news(appid: int, count: int = 20) -> List[NewsItem]:
             contents=str(raw.get("contents") or ""),
             date=int(raw.get("date", 0) or 0),
         ))
+    if out:
+        covers = _fetch_event_covers(appid)
+        for item in out:
+            item.cover_image = covers.get(item.title, "")
     log.debug("news %d: fetched %d items (%d update-flagged)",
               appid, len(out), sum(1 for n in out if n.is_update))
     return out

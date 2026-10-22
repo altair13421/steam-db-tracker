@@ -1,0 +1,52 @@
+{% extends "tracker/base.html" %}
+{% block title %}Apps YAML — Steam Tracker{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-xl-9">
+    <h1 class="h3 mb-2">Apps YAML</h1>
+    <p class="text-muted mb-4">
+      Export or import your {{ apps_count }} tracked app(s), including aliases and tracking settings.
+    </p>
+
+    <div class="card mb-4">
+      <div class="card-header">
+        <strong><i class="bi bi-download me-2"></i>Export tracked apps</strong>
+      </div>
+      <div class="card-body">
+        <p class="mb-3">
+          Download a seed-compatible YAML file containing only app IDs, aliases,
+          and price, news, and update tracking settings.
+        </p>
+        <a href="{% url 'tracker:export_apps_config' %}" class="btn btn-primary">
+          <i class="bi bi-file-earmark-arrow-down me-1"></i> Download apps.yaml
+        </a>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <strong><i class="bi bi-upload me-2"></i>Import apps</strong>
+      </div>
+      <div class="card-body">
+        <p class="mb-3">
+          Import adds new apps and updates matching app settings. Apps not in the
+          file and their history are left unchanged.
+        </p>
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          <label class="form-label" for="{{ form.file.id_for_label }}">Choose an apps.yaml file</label>
+          {{ form.file }}
+          {% if form.file.errors %}
+            <div class="text-danger small mt-2">{{ form.file.errors }}</div>
+          {% endif %}
+          <div class="form-text mb-3">YAML must use the same <code>apps:</code> format as <code>config/apps.yaml</code>. Maximum file size: 1 MB.</div>
+          <button type="submit" class="btn btn-success">
+            <i class="bi bi-cloud-upload me-1"></i> Import apps
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -45,6 +45,53 @@ class NewsDetailViewTests(TestCase):
         self.assertContains(response, "2024-03-15 12:34 UTC")
         self.assertContains(response, 'datetime="2024-03-15T12:34:00+00:00"')
 
+    def test_news_detail_shows_cover_art_separately_from_inline_images(self):
+        app = TrackedApp.objects.create(appid=1091500, alias="Cyberpunk 2077")
+        post = NewsPost.objects.create(
+            gid="cover-art",
+            app=app,
+            title="REDstreams",
+            cover_image=(
+                "https://clan.akamai.steamstatic.com/images/"
+                "35210272/12c97f011ba5d07c05359e8e39e86751a009650d.png"
+            ),
+            contents='[img src="{STEAM_CLAN_IMAGE}/35210272/inline.png"][/img]',
+        )
+
+        response = self.client.get(
+            reverse("tracker:news_detail", kwargs={"gid": post.gid})
+        )
+
+        self.assertEqual(response.status_code, 200)
+        rendered = response.content.decode()
+        cover_image = (
+            "https://clan.akamai.steamstatic.com/images/"
+            "35210272/12c97f011ba5d07c05359e8e39e86751a009650d.png"
+        )
+        inline_image = (
+            "https://clan.akamai.steamstatic.com/images/"
+            "35210272/inline.png"
+        )
+        self.assertIn(f'src="{cover_image}" alt="REDstreams cover art"', rendered)
+        self.assertIn(f'src="{inline_image}"', rendered)
+        self.assertLess(rendered.index(cover_image), rendered.index(inline_image))
+
+    def test_tracking_backfills_cover_art_for_existing_news(self):
+        app = TrackedApp.objects.create(appid=1091500, alias="Cyberpunk 2077")
+        post = NewsPost.objects.create(gid="existing-cover", app=app)
+        cover_image = "https://clan.akamai.steamstatic.com/images/35210272/cover.png"
+
+        record_new_news(app, [
+            NewsItem(
+                appid=1091500,
+                gid=post.gid,
+                cover_image=cover_image,
+            ),
+        ])
+
+        post.refresh_from_db()
+        self.assertEqual(post.cover_image, cover_image)
+
     def test_news_detail_escapes_post_content(self):
         app = TrackedApp.objects.create(appid=730, alias="CS2")
         post = NewsPost.objects.create(

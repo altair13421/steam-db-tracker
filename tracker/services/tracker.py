@@ -110,6 +110,7 @@ def diff_and_store(app: TrackedApp, snap: SteamAppSnapshot) -> List[Change]:
             old_value=str(prev.last_update),
             new_value=str(snap.last_update),
             note="last_update moved", detected_at=now,
+            occurred_at=_to_dt(snap.last_update),
         )
         changes.append(change)
 
@@ -123,12 +124,13 @@ def record_new_news(app: TrackedApp, items: List[NewsItem]) -> List[NewsPost]:
     for item in items:
         if not item.gid:
             continue
-        _, created = NewsPost.objects.get_or_create(
+        post, created = NewsPost.objects.get_or_create(
             gid=item.gid,
             defaults={
                 "app": app,
                 "title": item.title,
                 "url": item.url,
+                "cover_image": item.cover_image,
                 "author": item.author,
                 "feed": item.feed,
                 "is_update": item.is_update,
@@ -137,8 +139,11 @@ def record_new_news(app: TrackedApp, items: List[NewsItem]) -> List[NewsPost]:
             },
         )
         if not created:
+            if not post.cover_image and item.cover_image:
+                post.cover_image = item.cover_image
+                post.save(update_fields=["cover_image"])
             continue
-        new_posts.append(NewsPost.objects.get(gid=item.gid))
+        new_posts.append(post)
         Change.objects.create(
             app=app,
             change_type=(Change.Type.APP_UPDATE if item.is_update
@@ -147,6 +152,7 @@ def record_new_news(app: TrackedApp, items: List[NewsItem]) -> List[NewsPost]:
             new_value=item.title[:400],
             note=item.url or item.feed,
             detected_at=now,
+            occurred_at=_to_dt(item.date),
         )
     return new_posts
 

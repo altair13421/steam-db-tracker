@@ -1,7 +1,14 @@
 """Forms for the tracker web UI."""
+import yaml
 from django import forms
+from django.core.exceptions import ValidationError
 
 from .models import TrackedApp
+
+
+MAX_APPS_CONFIG_SIZE = 1_048_576
+MAX_APPS_PER_CONFIG = 1000
+APP_CONFIG_KEYS = {"appid", "alias", "news", "updates", "price"}
 
 
 class AddAppForm(forms.Form):
@@ -27,6 +34,84 @@ class AddAppForm(forms.Form):
         widget=forms.CheckboxInput(attrs={"class": "form-check-input"}))
     track_updates = forms.BooleanField(required=False, initial=True,
         widget=forms.CheckboxInput(attrs={"class": "form-check-input"}))
+
+
+class AppsImportForm(forms.Form):
+    """Validate an apps.yaml file before it changes the tracked app list."""
+    file = forms.FileField(
+        label="YAML file",
+        widget=forms.ClearableFileInput(attrs={
+            "class": "form-control",
+            "accept": ".yaml,.yml,application/yaml,text/yaml",
+        }),
+    )
+
+    def clean_file(self):
+        uploaded_file = self.cleaned_data["file"]
+        if uploaded_file.size > MAX_APPS_CONFIG_SIZE:
+            raise ValidationError("The YAML file must be 1 MB or smaller.")
+
+        try:
+            content = uploaded_file.read().decode("utf-8-sig")
+            data = yaml.safe_load(content)
+        except UnicodeDecodeError as exc:
+            raise ValidationError("The YAML file must use UTF-8 encoding.") from exc
+        except yaml.YAMLError as exc:
+            raise ValidationError(f"Invalid YAML: {exc}") from exc
+
+        if not isinstance(data, dict) or set(data) != {"apps"}:
+            raise ValidationError("The YAML document must contain only an 'apps' list.")
+
+        apps = data["apps"]
+        if not isinstance(apps, list):
+            raise ValidationError("'apps' must be a list.")
+        if len(apps) > MAX_APPS_PER_CONFIG:
+            raise ValidationError(
+                f"The YAML file cannot contain more than {MAX_APPS_PER_CONFIG} apps."
+            )
+
+        cleaned_apps = []
+        appids = set()
+        for index, app in enumerate(apps, start=1):
+            if not isinstance(app, dict):
+                raise ValidationError(f"App entry {index} must be a mapping.")
+            if set(app) - APP_CONFIG_KEYS:
+                raise ValidationError(
+                    f"App entry {index} contains unsupported settings."
+                )
+
+            appid = app.get("appid")
+            if type(appid) is not int or not 1 <= appid <= 4_294_967_295:
+                raise ValidationError(
+                    f"App entry {index} must have a positive integer appid."
+                )
+            if appid in appids:
+                raise ValidationError(f"AppID {appid} appears more than once.")
+            appids.add(appid)
+
+            alias = app.get("alias", "")
+            if not isinstance(alias, str) or len(alias) > 200:
+                raise ValidationError(
+                    f"App entry {index} alias must be a string of at most 200 characters."
+                )
+
+            settings = {}
+            for key in ("news", "updates", "price"):
+                value = app.get(key, True)
+                if type(value) is not bool:
+                    raise ValidationError(
+                        f"App entry {index} setting '{key}' must be true or false."
+                    )
+                settings[key] = value
+
+            cleaned_apps.append({
+                "appid": appid,
+                "alias": alias,
+                **settings,
+            })
+
+        self.cleaned_data["apps"] = cleaned_apps
+        return uploaded_file
 
 
 class ChangeFilterForm(forms.Form):

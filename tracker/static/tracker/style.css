@@ -403,6 +403,19 @@ footer {
   line-height: 1.8;
 }
 
+.news-article .news-cover {
+  margin: 0 0 1.5rem;
+}
+
+.news-article .news-cover img {
+  display: block;
+  width: 100%;
+  height: auto;
+  padding: 0;
+  border-radius: 0.5rem;
+  background: none;
+}
+
 .news-article .news-content p {
   margin-bottom: 1.25rem;
 }

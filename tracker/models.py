@@ -114,6 +114,7 @@ class NewsPost(models.Model):
     )
     title = models.CharField(max_length=400, blank=True)
     url = models.URLField(max_length=500, blank=True)
+    cover_image = models.URLField(max_length=1000, blank=True)
     author = models.CharField(max_length=200, blank=True)
     feed = models.CharField(max_length=100, blank=True)
     is_update = models.BooleanField(default=False)
@@ -154,6 +155,7 @@ class Change(models.Model):
     old_value = models.CharField(max_length=400, blank=True)
     new_value = models.CharField(max_length=400, blank=True)
     note = models.CharField(max_length=500, blank=True)
+    occurred_at = models.DateTimeField(null=True, blank=True, db_index=True)
     detected_at = models.DateTimeField(default=timezone.now, db_index=True)
 
     class Meta:

@@ -48,14 +48,18 @@ class NewsPostAdmin(admin.ModelAdmin):
     search_fields = ("title", "gid", "app__cached_name")
     date_hierarchy = "date"
     readonly_fields = ("gid", "app", "title", "url", "author", "feed",
-                       "is_update", "contents", "date", "first_seen")
+                       "cover_image", "is_update", "contents", "date",
+                       "first_seen")
 
 
 @admin.register(Change)
 class ChangeAdmin(admin.ModelAdmin):
-    list_display = ("detected_at", "app", "change_type",
+    list_display = ("occurred_at", "app", "change_type",
                     "old_value", "new_value", "note")
     list_filter = ("change_type",)
     search_fields = ("app__cached_name", "app__appid", "note")
-    date_hierarchy = "detected_at"
-    readonly_fields = ("detected_at",)
+    date_hierarchy = "occurred_at"
+    readonly_fields = ("occurred_at", "detected_at")
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).filter(occurred_at__isnull=False)

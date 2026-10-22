@@ -131,8 +131,10 @@ docker compose run --rm web python manage.py <cmd>
 | `/app/<appid>` | App detail — price chart + recent snapshots + recent changes + latest news. |
 | `/changelog` | Filterable changelog (by app, change type, days). |
 | `/news` | News feed across all apps, filterable by app + "only updates". |
-| `/news/<gid>` | News detail — Steam announcement content with formatted text, images, links, and media. |
+| `/news/<gid>` | News detail — Steam announcement cover art and content with formatted text, images, links, and media. |
 | `/digest` | Weekly (or N-day) digest with per-app stats. |
+| `/apps-config` | Import or export tracked app IDs, aliases, and tracking settings as YAML. |
+| `/apps-config/export` | Downloads a seed-compatible YAML file for the current tracked apps. |
 | `/charts/<filename>` | Serves the PNGs (in production prefer nginx). |
 | `/admin/` | Django admin (login required). |
 
@@ -160,7 +162,9 @@ Each `track` cycle per app:
 
 4. **`record_new_news`** inserts news posts (deduplicated by Steam's `gid`).
    New posts become either `app_update` (if their feed signals a
-   patch / hotfix / release note) or `new_news` change events.
+   patch / hotfix / release note) or `new_news` change events. Changelog
+   entries use Steam's publication/update timestamp when available; price and
+   discount changes show when the tracker detected them.
 
 All detected changes show up on the dashboard, changelog page, app-detail
 page, and digest page. The scheduler logs them to `logs/steam_tracker.log`

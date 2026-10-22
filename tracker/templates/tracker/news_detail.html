@@ -34,6 +34,12 @@
           </div>
         </div>
 
+        {% if post.cover_image %}
+          <figure class="news-cover">
+            <img src="{{ post.cover_image }}" alt="{{ post.title }} cover art" loading="lazy">
+          </figure>
+        {% endif %}
+
         <div class="news-content">{{ post.contents|steam_news }}</div>
 
         <div class="d-flex flex-wrap gap-2 mt-4 pt-3 border-top">

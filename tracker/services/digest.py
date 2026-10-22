@@ -57,7 +57,10 @@ def build_digest(days: int = 7) -> DigestReport:
     now = timezone.now()
     since = now - timedelta(days=days)
 
-    changes_qs = Change.objects.filter(detected_at__gte=since)
+    changes_qs = Change.objects.filter(
+        occurred_at__isnull=False,
+        occurred_at__gte=since,
+    )
     news_qs = NewsPost.objects.filter(date__gte=since)
 
     # Per-app aggregates.
@@ -94,9 +97,9 @@ def build_digest(days: int = 7) -> DigestReport:
         # Latest app_update + URL hint.
         last_update_change = changes_for_app.filter(
             change_type=Change.Type.APP_UPDATE
-        ).order_by("-detected_at").first()
+        ).order_by("-occurred_at").first()
         if last_update_change:
-            ad.last_update_at = last_update_change.detected_at
+            ad.last_update_at = last_update_change.occurred_at
             if last_update_change.note.startswith("http"):
                 ad.last_update_url = last_update_change.note
 

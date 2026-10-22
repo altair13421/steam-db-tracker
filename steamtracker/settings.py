@@ -59,7 +59,7 @@ ROOT_URLCONF = "steamtracker.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "tracker" / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
